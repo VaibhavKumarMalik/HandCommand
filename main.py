@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import mediapipe as mp
-import os
+import os, sys
 import time
 import threading
 import tkinter as tk
@@ -9,6 +9,16 @@ from PIL import Image
 import customtkinter as ctk
 import webbrowser
 import warnings
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
@@ -85,14 +95,43 @@ class HandGestureApp:
         self.center_window(1000, 550)
 
         # Initialize UI elements
-        self.camera_label = ctk.CTkLabel(self.app, text="")
+        
+        # Left Frame
+        self.leftFrame = ctk.CTkFrame(self.app, width=300, height=550, fg_color="#f3f3f3")  # Set a width
+        self.leftFrame.grid_propagate(False)  # Prevent frame from resizing
+        self.leftFrame.pack_propagate(False)  # Prevent frame from resizing
+        self.leftFrame.grid(row=0, column=0)
+
+        # Right Frame
+        self.rightFrame = ctk.CTkFrame(self.app, width=700, height=550, fg_color="white")
+        self.rightFrame.grid_propagate(False)   
+        self.rightFrame.pack_propagate(False) 
+        self.rightFrame.grid(row=0, column=1)
+
+        # Camera label
+        self.camera_label = ctk.CTkLabel(self.rightFrame, text="")
         self.camera_label.pack(pady=20)
 
-        self.open_button = ctk.CTkButton(master=self.app, text="Open Camera", command=self.start_camera)
-        self.open_button.pack(pady=20)
+        
+        # Logo frame
+        self.logo =  ctk.CTkFrame(master=self.leftFrame, fg_color="#f3f3f3")
+        self.logo.pack()
 
-        self.stop_button = ctk.CTkButton(master=self.app, text="Stop Camera", command=self.stop_camera)
-        self.stop_button.pack(pady=20)
+        # Load the logo image using the resource_path function
+        logo_image_path = resource_path("logo.jpeg")  # Use your image path
+        logo_image = ctk.CTkImage(light_image=Image.open(logo_image_path), size=(150, 150))
+
+        # Create logolabel inside the logo frame and add the image
+        self.logolabel = ctk.CTkLabel(self.logo, image=logo_image, text="")  # No text, only image
+        self.logolabel.pack(pady=20)
+
+        # Open Camera Button
+        self.open_button = ctk.CTkButton(master=self.leftFrame, text="Open Camera", command=self.start_camera)
+        self.open_button.pack(pady=10, padx=20)
+
+        # Stop Camera Button
+        self.stop_button = ctk.CTkButton(master=self.leftFrame, text="Stop Camera", command=self.stop_camera)
+        self.stop_button.pack(pady=10, padx=20)
 
         # Initialize Hand Gesture Detector
         self.gesture_detector = HandGestureDetector()
@@ -155,14 +194,14 @@ class HandGestureApp:
                     if gesture != "unknown":
                         self.gesture_detector.trigger_action(gesture)
 
-            time.sleep(0.03)  # Sleep to simulate frame delay (30 FPS)
+            time.sleep(0.02)  # Sleep to simulate frame delay (30 FPS)
 
     def update_gui(self):
         """Updates the camera feed in the GUI."""
         if self.camera_running and self.frame is not None:
             # Convert the frame to a format Tkinter can use
             img = Image.fromarray(cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB))
-            imgtk = ctk.CTkImage(light_image=img, size=(640, 480))
+            imgtk = ctk.CTkImage(light_image=img, size=(1280, 720))
 
             # Update the camera label with the latest image
             self.camera_label.configure(image=imgtk)
